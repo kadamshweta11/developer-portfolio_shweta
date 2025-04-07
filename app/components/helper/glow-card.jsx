@@ -82,24 +82,19 @@
 // export default GlowCard;
 
 
-"use client"
+"use client";
 
 import { useEffect, useRef } from 'react';
 
 const GlowCard = ({ children, identifier }) => {
   const containerRef = useRef(null);
-  const cardsRef = useRef([]);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    if (!containerRef.current) return;
+    // Ensure this only runs on client side
+    if (typeof window === 'undefined' || !containerRef.current) return;
 
-    const CARDS = Array.from(
-      document.querySelectorAll(`.glow-card-${identifier}`)
-    );
-    
-    cardsRef.current = CARDS;
     const CONTAINER = containerRef.current;
+    const CARDS = Array.from(document.querySelectorAll(`.glow-card-${identifier}`));
 
     const CONFIG = {
       proximity: 40,
@@ -110,20 +105,17 @@ const GlowCard = ({ children, identifier }) => {
       opacity: 0,
     };
 
-    const UPDATE = (event) => {
+    const handlePointerMove = (event) => {
       CARDS.forEach((CARD) => {
         const CARD_BOUNDS = CARD.getBoundingClientRect();
-
-        if (
+        const isActive = (
           event.x > CARD_BOUNDS.left - CONFIG.proximity &&
           event.x < CARD_BOUNDS.left + CARD_BOUNDS.width + CONFIG.proximity &&
           event.y > CARD_BOUNDS.top - CONFIG.proximity &&
           event.y < CARD_BOUNDS.top + CARD_BOUNDS.height + CONFIG.proximity
-        ) {
-          CARD.style.setProperty('--active', '1');
-        } else {
-          CARD.style.setProperty('--active', CONFIG.opacity.toString());
-        }
+        );
+        
+        CARD.style.setProperty('--active', isActive ? '1' : CONFIG.opacity.toString());
 
         const CARD_CENTER = [
           CARD_BOUNDS.left + CARD_BOUNDS.width * 0.5,
@@ -131,23 +123,22 @@ const GlowCard = ({ children, identifier }) => {
         ];
 
         let ANGLE = (Math.atan2(event.y - CARD_CENTER[1], event.x - CARD_CENTER[0]) * 180 / Math.PI);
-        ANGLE = ANGLE < 0 ? ANGLE + 360 : ANGLE;
-        CARD.style.setProperty('--start', (ANGLE + 90).toString());
+        CARD.style.setProperty('--start', (ANGLE < 0 ? ANGLE + 360 : ANGLE) + 90);
       });
     };
 
     const RESTYLE = () => {
-      CONTAINER.style.setProperty('--gap', CONFIG.gap.toString());
-      CONTAINER.style.setProperty('--blur', CONFIG.blur.toString());
-      CONTAINER.style.setProperty('--spread', CONFIG.spread.toString());
+      CONTAINER.style.setProperty('--gap', CONFIG.gap);
+      CONTAINER.style.setProperty('--blur', CONFIG.blur);
+      CONTAINER.style.setProperty('--spread', CONFIG.spread);
       CONTAINER.style.setProperty('--direction', CONFIG.vertical ? 'column' : 'row');
     };
 
     RESTYLE();
-    window.addEventListener('pointermove', UPDATE);
+    window.addEventListener('pointermove', handlePointerMove);
 
     return () => {
-      window.removeEventListener('pointermove', UPDATE);
+      window.removeEventListener('pointermove', handlePointerMove);
     };
   }, [identifier]);
 
