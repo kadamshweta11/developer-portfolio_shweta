@@ -84,14 +84,15 @@
 
 "use client";
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 const GlowCard = ({ children, identifier }) => {
   const containerRef = useRef(null);
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
-    // Ensure this only runs on client side
-    if (typeof window === 'undefined' || !containerRef.current) return;
+    setIsClient(true);
+    if (!containerRef.current) return;
 
     const CONTAINER = containerRef.current;
     const CARDS = Array.from(document.querySelectorAll(`.glow-card-${identifier}`));
@@ -122,7 +123,7 @@ const GlowCard = ({ children, identifier }) => {
           CARD_BOUNDS.top + CARD_BOUNDS.height * 0.5,
         ];
 
-        let ANGLE = (Math.atan2(event.y - CARD_CENTER[1], event.x - CARD_CENTER[0]) * 180 / Math.PI);
+        let ANGLE = (Math.atan2(event.y - CARD_CENTER[1], event.x - CARD_CENTER[0]) * 180) / Math.PI;
         CARD.style.setProperty('--start', (ANGLE < 0 ? ANGLE + 360 : ANGLE) + 90);
       });
     };
@@ -141,6 +142,8 @@ const GlowCard = ({ children, identifier }) => {
       window.removeEventListener('pointermove', handlePointerMove);
     };
   }, [identifier]);
+
+  if (!isClient) return <div className="glow-container">{children}</div>;
 
   return (
     <div ref={containerRef} className={`glow-container-${identifier} glow-container`}>

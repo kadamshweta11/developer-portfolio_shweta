@@ -43,19 +43,20 @@
 "use client";
 import { personalData } from "@/utils/data/personal-data";
 import dynamic from 'next/dynamic';
+import { useEffect, useState } from 'react';
 
-// Dynamically import components with SSR disabled where needed
-const HeroSection = dynamic(() => import("./components/homepage/hero-section"));
-const AboutSection = dynamic(() => import("./components/homepage/about"));
-const Experience = dynamic(() => import("./components/homepage/experience"));
-const Skills = dynamic(() => import("./components/homepage/skills"));
-const Projects = dynamic(() => import("./components/homepage/projects"));
-const Education = dynamic(
-  () => import("./components/homepage/education"),
-  { ssr: false } // Disable SSR if it contains client-side only code
-);
+// Dynamically import all components with proper SSR handling
+const HeroSection = dynamic(() => import("./components/homepage/hero-section"), { ssr: false });
+const AboutSection = dynamic(() => import("./components/homepage/about"), { ssr: false });
+const Experience = dynamic(() => import("./components/homepage/experience"), { ssr: false });
+const Skills = dynamic(() => import("./components/homepage/skills"), { ssr: false });
+const Projects = dynamic(() => import("./components/homepage/projects"), { ssr: false });
+const Education = dynamic(() => import("./components/homepage/education"), { ssr: false });
 
-async function getData() {
+// Move data fetching to client-side
+async function getClientSideData() {
+  if (typeof window === 'undefined') return [];
+  
   try {
     const res = await fetch(`https://dev.to/api/articles?username=${personalData.devUsername}`);
     if (!res.ok) return [];
@@ -67,11 +68,15 @@ async function getData() {
   }
 }
 
-export default async function Home() {
-  const blogs = await getData();
+export default function Home() {
+  const [blogs, setBlogs] = useState([]);
+
+  useEffect(() => {
+    getClientSideData().then(data => setBlogs(data));
+  }, []);
 
   return (
-    <div suppressHydrationWarning>
+    <div>
       <HeroSection />
       <AboutSection />
       <Experience />
